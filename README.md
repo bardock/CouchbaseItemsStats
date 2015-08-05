@@ -15,7 +15,7 @@ The keys are grouped using a regex and for each group calculates:
 	* Enter the following code:
 	```js
     function (doc, meta) {
-      emit(meta.id, meta);
+		emit(meta.id, meta);
     }
     ```
     * Save
