@@ -25,5 +25,5 @@ The keys are grouped using a regex and for each group calculates:
     * `viewName`: View name to consume.
     * `keyPrefixRegex`: A regex used to extract the prefix from each key. It's used in grouping function.
     * `reportFormat`: Format used to store in the report. Only `json` is suppported by now.
-    * `reportFilePath`: Path use to store the report file.
+    * `reportFilePath`: Path used to store the report file.
 3. Run the .exe and the report file will be generated
