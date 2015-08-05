@@ -24,13 +24,18 @@ namespace CouchbaseItemsStats
                 Console.WriteLine("Analyzing data...");
                 var stats = metadata
                     .GroupBy(x => GetKeyPrefix(x.ItemId),
-                        elementSelector: x => (long)((IDictionary<string, object>)x.Info["value"])["expiration"])
+                        elementSelector: x => GetSecondsLeft(x))
+                    .Select(x => new
+                    {
+                        KeyPrefix = x.Key,
+                        Expired = x.Where(s => s <= 0),
+                        NotExpired = x.Where(s => s > 0)
+                    })
                     .Select(x => new StatItem()
                     {
-                        keyPrefix = x.Key,
-                        count = x.Count(),
-                        expirationAvg = x.Average(),
-                        expirationStdDev = GetStdDev(x)
+                        KeyPrefix = x.KeyPrefix,
+                        Expired = new StatItemDetail(x.Expired),
+                        NotExpired = new StatItemDetail(x.NotExpired)
                     });
 
                 Console.WriteLine("Storing...");
@@ -55,11 +60,15 @@ namespace CouchbaseItemsStats
             return Regex.Match(key, ConfigurationManager.AppSettings["keyPrefixRegex"]).Value;
         }
 
-        private static double GetStdDev(IEnumerable<long> values)
+        private static double GetSecondsLeft(IViewRow viewRow)
         {
-            double average = values.Average();
-            double sumOfSquaresOfDifferences = values.Select(val => (val - average) * (val - average)).Sum();
-            return Math.Sqrt(sumOfSquaresOfDifferences / values.Count());
+            var expiration = (long)((IDictionary<string, object>)viewRow.Info["value"])["expiration"];
+            return UnixTimestampToSecondsLeft(expiration);
+        }
+
+        private static double UnixTimestampToSecondsLeft(long unixData)
+        {
+            return unixData - DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds;
         }
 
         private static string Serialize(IEnumerable<StatItem> stats)
@@ -74,9 +83,33 @@ namespace CouchbaseItemsStats
 
     internal class StatItem
     {
-        public string keyPrefix { get; set; }
-        public long count { get; set; }
-        public double expirationAvg { get; set; }
-        public double expirationStdDev { get; set; }
+        public string KeyPrefix { get; set; }
+        public StatItemDetail Expired { get; set; }
+        public StatItemDetail NotExpired { get; set; }
+    }
+
+    internal class StatItemDetail
+    {
+        public long Count { get; private set; }
+        public double? SecondsLeftAvg { get; private set; }
+        public double? SecondsLeftStdDev { get; private set; }
+
+        public StatItemDetail(IEnumerable<double> seconds)
+        {
+            Count = seconds.Count();
+
+            if (Count > 0)
+            {
+                SecondsLeftAvg = seconds.Average();
+                SecondsLeftStdDev = GetStdDev(seconds);
+            }
+        }
+
+        private double GetStdDev(IEnumerable<double> values)
+        {
+            double average = values.Average();
+            double sumOfSquaresOfDifferences = values.Select(val => (val - average) * (val - average)).Sum();
+            return Math.Sqrt(sumOfSquaresOfDifferences / values.Count());
+        }
     }
 }

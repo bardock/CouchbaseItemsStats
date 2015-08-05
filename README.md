@@ -4,8 +4,10 @@ CouchbaseItemsStats
 Reads a Couchbase's bucket metadata and generates a report with statistics about stored items.
 The keys are grouped using a regex and for each group calculates:
 * count
-* average expiration time
-* stardard deviation of expiration time
+* average seconds left for expiration
+* stardard deviation of seconds left for expiration
+
+Expired items are discriminated because [couchbase removes expired items at maintenance intervals](http://docs.couchbase.com/developer/dev-guide-3.0/keys-values.html).
 
 ## Usage
 
