@@ -52,6 +52,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ConfigSection.cs" />
     <Compile Include="StatItem.cs" />
     <Compile Include="StatsClient.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Couchbase;
@@ -27,7 +26,7 @@ namespace CouchbaseItemsStats
             var client = new CouchbaseClient();
 
             Console.WriteLine("Obtaining items metadata...");
-            var metadata = client.GetView(ConfigurationManager.AppSettings["viewDesignName"], ConfigurationManager.AppSettings["viewName"]);
+            var metadata = client.GetView(ConfigSection.Default.ViewDesignName, ConfigSection.Default.ViewName);
 
             Console.WriteLine("Analyzing data...");
             return metadata
@@ -49,7 +48,7 @@ namespace CouchbaseItemsStats
 
         private string GetKeyPrefix(string key)
         {
-            return Regex.Match(key, ConfigurationManager.AppSettings["keyPrefixRegex"]).Value;
+            return Regex.Match(key, ConfigSection.Default.KeyPrefixRegex).Value;
         }
 
         private double GetSecondsLeft(IViewRow viewRow)
