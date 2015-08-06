@@ -10,27 +10,17 @@ namespace CouchbaseItemsStats
     {
         private CouchbaseClient _client;
 
-        public StatsClient()
-            : this(new CouchbaseClient())
-        {
-        }
-
         public StatsClient(CouchbaseClient client)
         {
             _client = client;
         }
 
-        public IEnumerable<StatItem> GetStats()
+        public IEnumerable<StatItem> GetStats(string keyPrefixRegex = null)
         {
-            Console.WriteLine("Connecting with Couchbase...");
-            var client = new CouchbaseClient();
+            var metadata = _client.GetView(ConfigSection.Default.ViewDesignName, ConfigSection.Default.ViewName);
 
-            Console.WriteLine("Obtaining items metadata...");
-            var metadata = client.GetView(ConfigSection.Default.ViewDesignName, ConfigSection.Default.ViewName);
-
-            Console.WriteLine("Analyzing data...");
             return metadata
-                .GroupBy(x => GetKeyPrefix(x.ItemId),
+                .GroupBy(x => GetKeyPrefix(x.ItemId, keyPrefixRegex),
                     elementSelector: x => GetSecondsLeft(x))
                 .Select(x => new
                 {
@@ -46,9 +36,9 @@ namespace CouchbaseItemsStats
                 });
         }
 
-        private string GetKeyPrefix(string key)
+        private string GetKeyPrefix(string key, string keyPrefixRegex = null)
         {
-            return Regex.Match(key, ConfigSection.Default.KeyPrefixRegex).Value;
+            return Regex.Match(key, keyPrefixRegex ?? ConfigSection.Default.KeyPrefixRegex).Value;
         }
 
         private double GetSecondsLeft(IViewRow viewRow)

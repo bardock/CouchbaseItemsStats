@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Configuration;
 using System.IO;
+using Couchbase;
 using Newtonsoft.Json;
 
 namespace CouchbaseItemsStats
@@ -12,8 +13,12 @@ namespace CouchbaseItemsStats
         {
             try
             {
-                var client = new StatsClient();
+                Console.WriteLine("Connecting with Couchbase...");
+                var couchbaseClient = new CouchbaseClient();
 
+                var client = new StatsClient(couchbaseClient);
+
+                Console.WriteLine("Obtaining statistics...");
                 var stats = client.GetStats();
 
                 Console.WriteLine("Storing...");
