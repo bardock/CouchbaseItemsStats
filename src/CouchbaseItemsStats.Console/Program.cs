@@ -1,9 +1,12 @@
-﻿using System;
+﻿using Couchbase;
+using Couchbase.Configuration.Client;
+using Couchbase.Configuration.Client.Providers;
+using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.IO;
-using Couchbase;
-using Newtonsoft.Json;
+using System.Linq;
 
 namespace CouchbaseItemsStats
 {
@@ -14,9 +17,13 @@ namespace CouchbaseItemsStats
             try
             {
                 Console.WriteLine("Connecting with Couchbase...");
-                var couchbaseClient = new CouchbaseClient();
 
-                var client = new StatsClient(couchbaseClient);
+                var clientConfig = new ClientConfiguration((CouchbaseClientSection)ConfigurationManager.GetSection("couchbaseClients/couchbase"));
+                ClusterHelper.Initialize(clientConfig);
+
+                var bucketConfig = clientConfig.BucketConfigs.Values.FirstOrDefault();
+
+                var client = new StatsClient(bucketConfig);
 
                 Console.WriteLine("Obtaining statistics...");
                 var stats = client.GetStats();
