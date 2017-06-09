@@ -29,5 +29,12 @@ namespace CouchbaseItemsStats
             get { return (string)this["keyPrefixRegex"]; }
             set { this["keyPrefixRegex"] = value; }
         }
+
+        [ConfigurationProperty("dev", DefaultValue = false)]
+        public bool Dev
+        {
+            get { return (bool)this["dev"]; }
+            set { this["dev"] = value; }
+        }
     }
 }

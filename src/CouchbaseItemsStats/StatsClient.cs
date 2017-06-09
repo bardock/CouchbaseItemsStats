@@ -1,26 +1,33 @@
-﻿using System;
+﻿using Couchbase;
+using Couchbase.Configuration.Client;
+using Couchbase.Views;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
-using Couchbase;
 
 namespace CouchbaseItemsStats
 {
     public class StatsClient
     {
-        private CouchbaseClient _client;
+        private BucketConfiguration _bucketConfig;
 
-        public StatsClient(CouchbaseClient client)
+        public StatsClient(BucketConfiguration bucketConfig)
         {
-            _client = client;
+            _bucketConfig = bucketConfig;
         }
 
         public IEnumerable<StatItem> GetStats(string keyPrefixRegex = null)
         {
-            var metadata = _client.GetView(ConfigSection.Default.ViewDesignName, ConfigSection.Default.ViewName);
+            var bucket = ClusterHelper.GetBucket(_bucketConfig.BucketName, _bucketConfig.Password);
+            var query = bucket.CreateQuery(ConfigSection.Default.ViewDesignName, ConfigSection.Default.ViewName, ConfigSection.Default.Dev);
+
+            var result = bucket.Query<Dictionary<string, object>>(query);
+
+            var metadata = result.Rows;
 
             return metadata
-                .GroupBy(x => GetKeyPrefix(x.ItemId, keyPrefixRegex),
+                .GroupBy(x => GetKeyPrefix(x.Id, keyPrefixRegex),
                     elementSelector: x => GetSecondsLeft(x))
                 .Select(x => new
                 {
@@ -41,9 +48,9 @@ namespace CouchbaseItemsStats
             return Regex.Match(key, keyPrefixRegex ?? ConfigSection.Default.KeyPrefixRegex).Value;
         }
 
-        private double GetSecondsLeft(IViewRow viewRow)
+        private double GetSecondsLeft(ViewRow<Dictionary<string, object>> viewRow)
         {
-            var expiration = (long)((IDictionary<string, object>)viewRow.Info["value"])["expiration"];
+            var expiration = (long)viewRow.Value["expiration"];
             return UnixTimestampToSecondsLeft(expiration);
         }
 
